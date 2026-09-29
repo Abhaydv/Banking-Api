@@ -5,10 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.models.user import User
-from app.core.security import SECRET_KEY, ALGORITHM
+from app.core.config import settings
 
 
 security = HTTPBearer()
+
+# Stores tokens that have been logged out
+revoked_tokens = set()
 
 
 def get_current_user(
@@ -17,11 +20,18 @@ def get_current_user(
 ):
     token = credentials.credentials
 
+    # Check if token has been revoked
+    if token in revoked_tokens:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked"
+        )
+
     try:
         payload = jwt.decode(
             token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
         )
 
         user_id = payload.get("sub")

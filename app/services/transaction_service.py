@@ -36,9 +36,14 @@ def deposit(
     )
 
     db.add(transaction)
-    db.commit()
-    db.refresh(account)
-    db.refresh(transaction)
+
+    try:
+        db.commit()
+        db.refresh(account)
+        db.refresh(transaction)
+    except Exception:
+        db.rollback()
+        raise
 
     return transaction
 
@@ -73,9 +78,14 @@ def withdraw(
     )
 
     db.add(transaction)
-    db.commit()
-    db.refresh(account)
-    db.refresh(transaction)
+
+    try:
+        db.commit()
+        db.refresh(account)
+        db.refresh(transaction)
+    except Exception:
+        db.rollback()
+        raise
 
     return transaction
 
@@ -136,9 +146,12 @@ def transfer(
     db.add(sender_transaction)
     db.add(receiver_transaction)
 
-    db.commit()
-
-    db.refresh(sender_transaction)
+    try:
+        db.commit()
+        db.refresh(sender_transaction)
+    except Exception:
+        db.rollback()
+        raise
 
     return sender_transaction
 

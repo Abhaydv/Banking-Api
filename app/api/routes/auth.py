@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.api.deps import revoked_tokens
 from app.database.database import get_db
 from app.schemas.auth import (
     RegisterRequest,
@@ -63,4 +64,15 @@ def login(
     return {
         "access_token": access_token,
         "token_type": "bearer"
+    }
+@router.post("/logout")
+def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())
+):
+    token = credentials.credentials
+
+    revoked_tokens.add(token)
+
+    return {
+        "message": "Successfully logged out"
     }

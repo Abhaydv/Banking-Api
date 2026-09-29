@@ -7,14 +7,18 @@ from app.api.deps import get_current_user
 from app.database.database import get_db
 from app.models.user import User
 from app.models.account import Account
+
 from app.schemas.transaction import (
     DepositRequest,
     WithdrawRequest,
+    TransferRequest,
     TransactionResponse
 )
+
 from app.services.transaction_service import (
     deposit,
     withdraw,
+    transfer,
     get_transactions
 )
 
@@ -90,6 +94,44 @@ def withdraw_money(
     return withdraw(
         db,
         account,
+        data.amount
+    )
+
+
+@router.post(
+    "/{account_id}/transfer",
+    response_model=TransactionResponse
+)
+def transfer_money(
+    account_id: int,
+    data: TransferRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from_account = get_user_account(
+        db,
+        account_id,
+        current_user.id
+    )
+
+    to_account = (
+        db.query(Account)
+        .filter(
+            Account.id == data.to_account_id
+        )
+        .first()
+    )
+
+    if to_account is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Destination account not found"
+        )
+
+    return transfer(
+        db,
+        from_account,
+        to_account,
         data.amount
     )
 
